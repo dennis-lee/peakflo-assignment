@@ -1,20 +1,22 @@
 import express from 'express'
 import multer from 'multer'
 import os from 'os'
-import { TravelController } from '../../travel/controller'
-import { Logger } from '../../tools/logger'
+import { ITravelController } from '../../travel/controller'
 
-const v1Router = express.Router()
 const upload = multer({ dest: os.tmpdir() })
 
-const logger = Logger.create()
+export class ExpressRouter {
+  constructor(private readonly travelController: ITravelController) {}
 
-const travelController = new TravelController(logger)
+  public create(): express.Router {
+    const router = express.Router()
 
-v1Router.post(
-  '/travel/calculate/upload',
-  upload.single('file'),
-  travelController.calculateFaresFromCsv.bind(travelController)
-)
+    router.post(
+      '/travel/calculate/upload',
+      upload.single('file'),
+      this.travelController.calculateFaresFromCsv.bind(this.travelController)
+    )
 
-export default v1Router
+    return router
+  }
+}
