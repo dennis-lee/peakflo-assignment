@@ -4,18 +4,18 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  PrimaryColumn,
 } from 'typeorm'
 import { Line } from './Line'
 
 @Entity('line_fares')
 export class LineFare {
-  @PrimaryGeneratedColumn('uuid')
-  id!: number
-
+  @PrimaryColumn({ name: 'origin_line' })
   @ManyToOne(() => Line)
   @JoinColumn({ name: 'origin_line' })
   origin!: Line
 
+  @PrimaryColumn({ name: 'destination_line' })
   @ManyToOne(() => Line)
   @JoinColumn({ name: 'destination_line' })
   destination!: Line
