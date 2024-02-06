@@ -10,28 +10,25 @@ export class TravelController {
     req: express.Request,
     res: express.Response
   ): Promise<void> {
-    if (!req.file) {
-      this.logger.error('CSV file not found')
-      res.status(500).end()
-    }
-
     await new Promise<void>((resolve, reject) => {
-      const filePath = req.file!.path
+      if (req.file) {
+        const filePath = req.file.path
 
-      fs.createReadStream(filePath)
-        .pipe(parse({ delimiter: ',', from_line: 2 }))
-        .on('data', function (row) {
-          console.log(row)
-        })
-        .on('end', function () {
-          fs.unlink(filePath, (error) => {
-            // Ignore unlinking errors
+        fs.createReadStream(filePath)
+          .pipe(parse({ delimiter: ',', from_line: 2 }))
+          .on('data', function (row) {
+            console.log(row)
           })
-          resolve()
-        })
-        .on('error', function (error) {
-          reject(error)
-        })
+          .on('end', function () {
+            fs.promises.unlink(filePath)
+            resolve()
+          })
+          .on('error', function (error) {
+            reject(error)
+          })
+      } else {
+        reject(new Error('CSV file not found'))
+      }
     })
       .catch((e) => {
         this.logger.error(e)
