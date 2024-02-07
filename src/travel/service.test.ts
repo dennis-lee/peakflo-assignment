@@ -96,7 +96,7 @@ describe('TravelService', () => {
         {
           FromLine: 'Green',
           ToLine: 'Green',
-          DateTime: '2021-03-24T17:58:30',
+          DateTime: '2021-03-24T07:58:30',
         },
         {
           FromLine: 'Green',
@@ -109,7 +109,7 @@ describe('TravelService', () => {
           DateTime: '2021-03-25T11:58:30',
         },
       ])
-      expect(result).toBe(8)
+      expect(result).toBe(7)
     })
   })
 })
