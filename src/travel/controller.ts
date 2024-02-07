@@ -3,36 +3,28 @@ import pino from 'pino'
 import fs from 'fs'
 import { parse } from 'csv-parse'
 import { ITravelService } from './service'
+import { IControllerResult } from '../api/v1/router'
 
-type UserTravelHistory = {
+export type UserTravelHistory = {
   FromLine: string
   ToLine: string
   DateTime: string
 }
 
 export interface ITravelController {
-  calculateFaresFromCsv(
-    req: express.Request,
-    res: express.Response
-  ): Promise<void>
+  calculateFaresFromCsv(req: express.Request): Promise<IControllerResult>
 }
 
 export class TravelController {
-  constructor(
-    protected readonly logger: pino.Logger,
-    readonly travelService: ITravelService
-  ) {}
+  constructor(protected readonly logger: pino.Logger, readonly travelService: ITravelService) {}
 
-  async calculateFaresFromCsv(
-    req: express.Request,
-    res: express.Response
-  ): Promise<void> {
-    await new Promise<UserTravelHistory[]>((resolve, reject) => {
-      const data = new Array<UserTravelHistory>()
+  async calculateFaresFromCsv(req: express.Request): Promise<IControllerResult> {
+    const data = new Array<UserTravelHistory>()
 
-      if (req.file) {
-        const filePath = req.file.path
+    if (req.file) {
+      const filePath = req.file.path
 
+      await new Promise<void>((resolve, reject) => {
         fs.createReadStream(filePath)
           .pipe(parse({ columns: true, delimiter: ',' }))
           .on('data', function (row: UserTravelHistory) {
@@ -40,31 +32,28 @@ export class TravelController {
           })
           .on('end', function () {
             fs.promises.unlink(filePath)
-            resolve(data)
+            resolve()
           })
           .on('error', function (error) {
             reject(error)
           })
-      } else {
-        reject(new Error('CSV file not found'))
-      }
-    })
-      .catch((e) => {
-        this.logger.error(e)
-        res.status(500).end()
       })
-      .then((response) => {
-        if (response) {
-          response.forEach((row) => {
-            this.travelService.calculateFareBetweenTwoLines(
-              row.FromLine,
-              row.ToLine,
-              new Date(row.DateTime)
-            )
-          })
-        }
 
-        res.status(200).end()
-      })
+      const totalFare = await this.travelService.calculateTotalFareFromHistory(data)
+
+      return {
+        code: 200,
+        body: {
+          totalFare,
+        },
+      }
+    }
+
+    return {
+      code: 500,
+      body: {
+        error: 'No file attached',
+      },
+    }
   }
 }
