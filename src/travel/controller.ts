@@ -21,6 +21,8 @@ export class TravelController {
   async calculateFaresFromCsv(req: express.Request): Promise<IControllerResult> {
     const data = new Array<UserTravelHistory>()
 
+    let errMsg = ''
+
     if (req.file) {
       const filePath = req.file.path
 
@@ -39,20 +41,24 @@ export class TravelController {
           })
       })
 
-      const totalFare = await this.travelService.calculateTotalFareFromHistory(data)
+      try {
+        const totalFare = await this.travelService.calculateTotalFareFromHistory(data)
 
-      return {
-        code: 200,
-        body: {
-          totalFare,
-        },
+        return {
+          code: 200,
+          body: {
+            totalFare,
+          },
+        }
+      } catch (e) {
+        errMsg = (e as Error).message
       }
     }
 
     return {
-      code: 500,
+      code: 400,
       body: {
-        error: 'No file attached',
+        error: errMsg ? errMsg : 'No file attached',
       },
     }
   }
